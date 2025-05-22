@@ -21,24 +21,16 @@ A brief description of the five R code scripts is provided:
 
 1) Format Dataset - R script formats the water level elevation - time series dataset to allow for use in the rest of the R scripts
 
-2) Tidal Hydrology Statistics - R script calculates mean low tide, high tide, higher high tide, and maximum tide elevation for the water level recorder
+2) Tidal Hydrology Statistics of Creek Water Level Recorders - R script calculates mean low tide, high tide, higher high tide, and maximum tide elevation for the water level recorder
 
-3) Flooding Statistics - R script calculates flooding duration (% of monitoring time) and high tide flooding frequency (%) for given elevations based on the water level recorder time series dataset.
+3) Flooding Statistics of Groundwater and Pool Water Level Recorders - R script calculates flooding duration (% of monitoring time) and high tide flooding frequency (%) for given elevations based on the water level recorder time series dataset.
 
-4) Graphing Tidal Elevations - R script graphs the continuous tidal water elevations over the 30 day study period (single lunar cycle) as well as reference lines for the marsh platform and root zone elevations.
+4) Graphing Tidal Hydrology - R script graphs the continuous tidal water elevations over the 30 day study period (single lunar cycle) as well as reference lines for the marsh platform and root zone elevations.
 
+5) Visualize Compiled flooding Statistics - R script visualizes the trends of flooding statistics for groups of water level recorders over time for specified treatments.
 
-Date Input Requirements:
+6) Sparrow Islands - R scrpt calculates the flooding duration, frequency, and time not flooded for elevations of marsh mounds or sparrow islands. 
 
-For the R project, only two datasets, in CSV format, are required:
-
-(1) Water Level Elevation Time Series - the continuous water level recorder dataset. The datset only has two columns: 
-
-- Date.Time = Date and Time of each water elevation measurement. Date and time column must be in the format of 'Month/Day/Year Hour:Minute'. Example: 12/5/2024 12:15. Time must be formatted in military time (e.g., 24 hour format).
-
-- WLR = water elevation measurements. Units are at the discretion of the user. 
-
-See the Dataset Templates folder for an example. 
 
 Folders:
 
