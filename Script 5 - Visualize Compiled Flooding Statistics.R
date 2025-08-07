@@ -78,9 +78,9 @@ library(scales)
 
 #Step 1 - User generated inputs
 
-Site_Name <- "Ipswich"
+Site_Name <- "Kents Island"
 
-Treatment <- "Runnel"
+Treatment <- "Runnel1"
 
 # Step 2 - Import the compiled flooding statistics dataset
 

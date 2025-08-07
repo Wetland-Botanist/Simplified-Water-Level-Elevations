@@ -83,17 +83,17 @@ library(VulnToolkit)
 
 #Step 1 - User generated inputs
 
-# Name of the water level recorder that will be selected for data anlaysis
-Logger_Name <- "RUN_1"
+# Name of the water level recorder that will be selected for data analysis
+Logger_Name <- "Runnel1"
 
 # Name of the creek water level recorder (used in Script 2)
 Creek_Logger <- "Creek"
 
 # Name of the Salt Marsh and Site (used in Scripts 1 and 2)
-Site <- "Essex Site 1"
+Site <- "Kents Island"
 
 # Year of monitoring season (used in Scripts 1 and 2)
-Year <- "2020"
+Year <- "2021"
 
 # The needed datasets are: (1) Formatted continuous water level elevations series,
 #                          (2) Tidal regime series (list of low and high tides), and
@@ -125,7 +125,7 @@ glimpse(creek_tides)
 
 
 # Step 4 - Import the marsh platform and root one elevation dataset
-elevs <- read.csv("Input Data\\Essex Marsh Elevations.csv") %>%
+elevs <- read.csv("Input Data\\Kents Island WLR Elevations.csv") %>%
   filter(WLR == Logger_Name)
 
 glimpse(elevs)

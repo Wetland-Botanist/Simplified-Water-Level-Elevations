@@ -64,7 +64,7 @@ library(DescTools)
 #Chapter 2: Import the Water Level Elevation Time Series Dataset -------------------
 
 # User must provide the file directory pathway for the dataset (dataset should be stored in 'Input Data' folder)
-wlr <- read.csv("Input Data\\Essex Site 1 2020 WLRs.csv") %>%
+wlr <- read.csv("Input Data\\Kents Island Hydrology TIme Series Example.csv") %>%
   filter(is.na(Creek) == FALSE)
 
 glimpse(wlr)
@@ -72,7 +72,7 @@ glimpse(wlr)
 
 # User must provide the name of the Salt Marsh and Site that will be used for naming exported tables
 
-Site <- "Essex Site 1"
+Site <- "Kents Island"
 
 
 #Chapter 3: Format the Water Level Elevation Dataset ----------------------------
@@ -121,7 +121,7 @@ lunar_cycle <- data.frame(matrix(nrow = 1, ncol = 8)) %>%
           Analysis_Days = as.duration(Start_Date %--% End_Date) / ddays(1),
           Analysis_Duration = paste(Start_Date, End_Date, sep = " - "))
 
-# Export the analysis and deployment metadata to Micrsosoft Excel CSV file
+# Export the analysis and deployment metadata to Microsoft Excel CSV file
 write.csv(lunar_cycle,
           paste("Output Stats\\", Site, Year, "WLR Metadata.csv", 
                 collapse = ""))

@@ -64,16 +64,16 @@ library(scales)
 #Step 1 - User generated inputs
 
 # Name of the water level recorder that will be selected for data anlaysis
-Logger_Name <- "RUN_1"
+Logger_Name <- "Runnel1"
 
 # Name of the creek water level recorder (used in Script 2)
 Creek_Logger <- "Creek"
 
 # Name of the Salt Marsh and Site (used in Scripts 1 and 2)
-Site <- "Essex Site 1"
+Site <- "Kents Island"
 
 # Year of monitoring season (used in Scripts 1 and 2)
-Year <- "2020"
+Year <- "2021"
 
 
 
@@ -94,7 +94,7 @@ glimpse(wlr_format)
 
 #Step 3: Import the marsh platform and root zone elevation dataset
 
-elevs <- read.csv("Input Data\\Little River WLR Elevations.csv") %>%
+elevs <- read.csv("Input Data\\Kents Island WLR Elevations.csv") %>%
   filter(WLR == Logger_Name)
 
 glimpse(elevs)

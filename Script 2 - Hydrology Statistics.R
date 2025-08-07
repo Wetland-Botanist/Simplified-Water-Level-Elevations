@@ -80,10 +80,10 @@ library(VulnToolkit)
 Creek_Logger <- "Creek"
 
 #Name of the Salt Marsh and Site used in Script 1 to create the title of the formatted time series dataset
-Site <- "Essex Site 3"
+Site <- "Kents Island"
 
 # Year generated in Script 1 to create the title of the formatted time series dataset
-Year <- "2023"
+Year <- "2021"
 
 
 
@@ -174,7 +174,7 @@ wlr_tides_max <- wlr_tides %>%
 
 
 
-#Chapter 6: Compile the tidal datums into one comprehensive data table -------------
+#Chapter 5: Compile the tidal datums into one comprehensive data table -------------
 
 #Step 1 - Generate data table with mean and standard errors as separte columns (unformatted data table)
 

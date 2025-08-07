@@ -50,9 +50,9 @@ library(VulnToolkit)
 
 Creek_Logger <- "Creek"
 
-Site <- "Essex Site 2"
+Site <- "Kents Island"
 
-Year <- "2024"
+Year <- "2021"
 
 
 #Task 1: Import Sparrow Island Elevation dataset
@@ -60,7 +60,7 @@ Year <- "2024"
 #Sparrow island elevations dataset includes individual island, island elevation, island group, and 
 # respective creek water level recorder
 
-sparrow <- read.csv("Input Data\\Essex 2024 Sparrow Islands.csv")
+sparrow <- read.csv("Input Data\\Kents Island Sparrow Island Elevations.csv")
 
 glimpse(sparrow)
 
@@ -73,7 +73,7 @@ glimpse(sparrow)
 # maximum consecutive dry days, especially if spring tide flooding is in the middle of the dataset. 
 
 
-wlr <- read.csv("Input Data\\Essex Site 2 2024 WLRs.csv") %>%
+wlr <- read.csv("Input Data\\Kents Island Hydrology Time Series Example.csv") %>%
   mutate(Date.Time = as.POSIXct(Date.Time, format = '%m/%d/%Y %H:%M'))
 
 glimpse(wlr)

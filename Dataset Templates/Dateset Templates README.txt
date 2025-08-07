@@ -15,4 +15,4 @@ Dataset Templates README:
 
 - Please note that the Water Level Elevations Time Series must have at least one "Creek..." column and as many other WLR columns. 
 
-- See the 'Input Data' folder README for in-depth details on the data requiremetns. 
+- See the 'Input Data' folder README for in-depth details on the data requirements. 
