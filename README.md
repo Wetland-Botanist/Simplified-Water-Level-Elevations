@@ -14,6 +14,8 @@ Monitoring Design Requirements:
 
 The R code is specifically written to meet the then needs of broad hydrology monitoring protocols for salt marshes and coastal wetlands. The code is built on the R package 'VulnToolkit' by Troy Hill (https://cran.r-project.org/web/packages/VulnToolkit/index.html), which was specifically designed to help identify low and high tides and calculate flooding frequency and durations for given elevations. The R project is a wrapper for the 'VulnToolkit' to quickly analyze single water level recorders and calculate flooding statistics for given elevations. Additionally, the R package creates a nice graph with the ggplot2 package of the continuous water level elevation time series.
 
+An example of Kents Island monitoring from 2021 by the Burdick Lab (University of New Hampshire) is provided and the filepaths in the code are preserved for the example. Users will need to change the input filepaths for their own hydrology dataset. 
+
 
 Project Overview:
 
@@ -27,9 +29,9 @@ A brief description of the five R code scripts is provided:
 
 4) Graphing Tidal Hydrology - R script graphs the continuous tidal water elevations over the 30 day study period (single lunar cycle) as well as reference lines for the marsh platform and root zone elevations.
 
-5) Visualize Compiled flooding Statistics - R script visualizes the trends of flooding statistics for groups of water level recorders over time for specified treatments.
+5) Sparrow Islands - R scrpt calculates the flooding duration, frequency, and time not flooded for elevations of marsh mounds or sparrow islands. 
 
-6) Sparrow Islands - R scrpt calculates the flooding duration, frequency, and time not flooded for elevations of marsh mounds or sparrow islands. 
+6) Visualize Compiled flooding Statistics - R script visualizes the trends of flooding statistics for groups of water level recorders over time for specified treatments.
 
 
 Folders:
