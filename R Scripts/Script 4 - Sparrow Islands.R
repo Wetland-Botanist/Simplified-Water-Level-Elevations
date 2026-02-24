@@ -48,11 +48,9 @@ library(VulnToolkit)
 
 # Task 1: User required data and names
 
-Creek_Logger <- "Creek"
+Site <- "Kents Island" ; Year <- "2025"
 
-Site <- "Kents Island"
-
-Year <- "2021"
+Creek_Logger_Name = "Creek"
 
 
 #Task 1: Import Sparrow Island Elevation dataset
@@ -60,7 +58,7 @@ Year <- "2021"
 #Sparrow island elevations dataset includes individual island, island elevation, island group, and 
 # respective creek water level recorder
 
-sparrow <- read.csv("Input Data\\Kents Island Sparrow Island Elevations.csv")
+sparrow <- read.csv("Input Data\\Kents Island Sparrow Elevations 2025.csv")
 
 glimpse(sparrow)
 
@@ -69,31 +67,44 @@ glimpse(sparrow)
 
 #Please note the water elevation profile used in this script is the Raw Water Elevations (input data in Script 1),
 # not the formatted and reduced water elevation profiles (~ 28 day length). We want to know the maximum number of 
-# days throughout the monitoring timeframe. Reduction to just the 28 days does not provide an accuarate representation of
+# days throughout the monitoring timeframe. Reduction to just the 28 days does not provide an accurate representation of
 # maximum consecutive dry days, especially if spring tide flooding is in the middle of the dataset. 
 
 
-wlr <- read.csv("Input Data\\Kents Island Hydrology Time Series Example.csv") %>%
-  mutate(Date.Time = as.POSIXct(Date.Time, format = '%m/%d/%Y %H:%M'))
+wlr <- read.csv("Input Data\\Kents Island 2025 Compiled WLRs R.csv") %>%
+  mutate(Date.Time = as.POSIXct(Date.Time, format = '%m/%d/%Y %H:%M')) %>%
+  rename(Creek_Logger = contains("Creek"))
 
 glimpse(wlr)
 
 
-# Task 3: Import the high tide - low tide creek hydrology dataset 
+# Task 3: Create  high tide - low tide creek hydrology dataset 
 
-# Dataset was created in Script 2
+# High and low tides for the entire creek hydrology dataset is created, similar to
+# the protocol followed in Script 2 (for the 30-day dataset)
 
-tides <- read.csv(paste("Formatted Datasets\\", Site, Creek_Logger, Year, "Tidal Hydrology Dataset.csv", 
-                        collapse = "")) %>%
-  select(-X) %>%
-  mutate(Date.Time = as.POSIXct(Date.Time, format = '%Y-%m-%d %H:%M:%S'),
-         WLR = Creek_Logger) %>%
-  rename(elev = level) %>%
-  filter(!is.na(Date.Time))
+tides <- HL(level = wlr$Creek_Logger, 
+            time = wlr$Date.Time, period = 12.5) %>%
+  rename(Date.Time = time) %>%
+  mutate(Creek_Logger = Creek_Logger_Name)
 
 glimpse(tides)
 
+# Step 2 - Quality Control
 
+#First check if there are consecutive high or low tides in the dataset
+tides_qaqc <- tides %>%
+  # Calculate previous tidal stage using lag() function
+  mutate(previous_tide = lag(tide, 1)) %>%
+  # Remove subsequent low tide from the dataset
+  filter(!(tide == "L" & previous_tide == "L")) %>%
+  # Remove subsequent high tide from the dataset
+  filter(!(tide == "H" & previous_tide == "H")) %>%
+  # Remove duplicates (not sure why this happened...)
+  distinct(Date.Time, .keep_all = TRUE) %>%
+  dplyr::select(-previous_tide)
+
+glimpse(tides_qaqc)
 
 
 #Chapter 3: Calculate hydrology metrics for the sparrow island elevations-------
@@ -106,13 +117,15 @@ glimpse(tides)
 
 wlr_format <- wlr %>%
   #Select only the creek water level recorders
-  dplyr::select(Date.Time, starts_with("Creek")) %>%
-  gather(key = WLR, value = elev, 
-         colnames(select(., starts_with("Creek")))) %>%
+  dplyr::select(Date.Time, Creek_Logger) %>%
+  gather(key = Creek_Logger, value = elev, 
+         colnames(select(., Creek_Logger))) %>%
+  mutate(Creek_Logger = "Creek") %>%
   #Combines the sparrow island dataset with the formatted creek WLR dataset, so now
   #each sparrow island is associated with a full water level elevation dataset in the monitoring period
-  merge(select(sparrow, Island, WLR, Elevation), by = "WLR") %>%
-  dplyr::select(Island, Elevation, Date.Time, WLR, elev) %>%
+  merge(dplyr::select(sparrow, Island, Creek_Logger, Elevation), 
+        by = "Creek_Logger") %>%
+  dplyr::select(Island, Elevation, Date.Time, Creek_Logger, elev) %>%
   rename(sparrow_elev = "Elevation") %>%
   arrange(Island, Date.Time)
 
@@ -129,6 +142,8 @@ sparrow_flood <- wlr_format %>%
   mutate(island_flood = as.numeric(island_flood),
            island_flood = round(island_flood, 1))
 
+glimpse(sparrow_flood)
+
 
 #Task 2: Calculate High Tide Flooding Frequency of each sparrow island
 
@@ -139,16 +154,18 @@ sparrow_flood <- wlr_format %>%
 
 sparrow_freq <- tides %>%
   filter(tide == "H") %>%
-  merge(select(sparrow, Island, Elevation, WLR), by = "WLR") %>%
+  merge(dplyr::select(sparrow, Island, Elevation, Creek_Logger), 
+        by = "Creek_Logger") %>%
   group_by(Island) %>%
   summarise(island_freq = fld.frq(z = Elevation[1], 
-                                  ht = tides$elev),
+                                  ht = tides$level),
             island_elevation = Elevation[1]) %>%
   ungroup() %>%
   mutate(island_freq = round(island_freq, 2) * 100)
 
+glimpse(sparrow_freq)
 
-#Task 3: Maximum Time Period Between Island Flooding Events (Maxium Dry Period)
+#Task 3: Maximum Time Period Between Island Flooding Events (Maximum Dry Period)
 
 # One of the main metrics of the sparrow construction is remaining dry (or not flooding) for at least several weeks
 # to allow for sparrow fledglings to hatch and retreat from flooding
@@ -168,12 +185,13 @@ sparrow_dry <- wlr_format %>%
   #Sometimes there might be an NA inserted into the dataset, remove them
   filter(!is.na(Date.Time)) %>%
   #Calculates maximum time difference through the entire dataset
-  summarise(island_dry_days = max(diff.Date(Date.Time))/ddays(1)) %>%
+  summarise(island_dry_days = max(diff.Date(Date.Time))/ddays(1),
+            island_elevation = sparrow_elev[1]) %>%
   mutate(island_dry_days = as.numeric(island_dry_days),
          island_dry_days = round(island_dry_days, 2)) %>%
   ungroup()
 
-
+glimpse(sparrow_dry)
 
 
 #Chapter 4: Wrap up the Sparrow Island Stats into one useful table-------------
@@ -189,14 +207,15 @@ sparrow_stats <- sparrow %>%
   rename(Flooding_Duration_Percent = island_flood,
          HT_Frequency_Percent = island_freq,
          Max_Dry_Period_days = island_dry_days) %>%
-  select(Island, Island_Group, WLR, Elevation,
+  dplyr::select(Island, Island_Group, Creek_Logger, Elevation,
          Flooding_Duration_Percent, HT_Frequency_Percent, Max_Dry_Period_days)
 
+glimpse(sparrow_stats)
 
 #Task 2: Export the sparrow island statistics table to Excel
 
 write.csv(sparrow_stats,
-          paste("Output Stats\\", Site, "Sparrow Island Hydrology Stats.csv",
+          paste("Output Stats\\", Site, Year, "Sparrow Island Hydrology Stats.csv",
                 collapse = ""))
 
 
@@ -211,10 +230,20 @@ island_stats <- sparrow_stats %>%
             ))) %>%
   ungroup() %>%
   mutate(across(Flooding_Duration_Percent_mean:Max_Dry_Period_days_se,
-                ~round(., 1)))
+                ~round(., 1))) %>%
+  mutate(
+    Flooding_Duration = paste(Flooding_Duration_Percent_mean, Flooding_Duration_Percent_se,
+                              sep = " +/- "),
+    Flood_Frequency = paste(HT_Frequency_Percent_mean, HT_Frequency_Percent_se,
+                            sep = " +/- "),
+    Max_Days_Dry = paste(Max_Dry_Period_days_mean, Max_Dry_Period_days_se,
+                         sep = " +/- ")) %>%
+  dplyr::select(Island_Group, Flooding_Duration, Flood_Frequency, Max_Days_Dry)
+
+glimpse(island_stats)
 
 write.csv(island_stats,
-          paste("Output Stats\\", Site, "Sparrow Island Group Hydrology Stats.csv",
+          paste("Output Stats\\", Site, Year, "Sparrow Island Group Hydrology Stats.csv",
                 collapse = ""))
 
 
