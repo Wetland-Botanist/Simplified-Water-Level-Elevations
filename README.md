@@ -50,7 +50,9 @@ See individual README files in each folder for more in-depth details.
    
 6) Figures - output of water level tidal elevation graphs in JPG format
 
+7) Supporting Information - locations of standard operating procedure, spring tide adjustment Excel sheet, and in-field measurements data sheet (see note below)
 
-Water Level Recorder SOP:
 
-The standard operating procedure used by the Coastal Habitat Restoration Team is included in the project to guide users in well construction, instrument preparation, in-field deployment, data download, and data analysis. 
+Water Level Recorder Supprting Information:
+
+The standard operating procedure used by the Coastal Habitat Restoration Team is included in the project to guide users in well construction, instrument preparation, in-field deployment, data download, and data analysis. Material reference in the SOP, including in-field datasheet to record measurements and Excel file to walk through spring tide adjustments, are included as well. 
