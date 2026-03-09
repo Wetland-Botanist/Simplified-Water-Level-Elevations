@@ -1,23 +1,18 @@
-# Project: Atlantic Coast Joint Venture - Assessment of Runnel Effectiveness
-# Analysis: Groundwater Hydrology Analysis
-#Script: Water Level Recorder Processing - Tidal Datums with Creek WLR
+# Project: Analysis of an individual water level recorder for salt marsh monitoring
+# Script 2: Tidal Datums of Creek Water Level Recorders
+# Authors: Jenny Gibson (jennifer.gibson@unhs.edu), Grant McKown (james.mckown@unh.edu)
 
-#Authors: Grant McKown (james.mckown@unh.edu)
+# Last Updated: March 9th, 2026
 
 
-# Script Description: Tidal hydrology statistics (e.g., tidal datums) are calculated for a 
-# SINGLE water level recorder in a creek, ditch, or hydrologic pathway.
-# The code is not appropriate for groundwater level recorders, since determination of low and high tides
-# can be impossible with the unique drainage patterns of groundwater. The script calculates the
-# the following tidal statistics:
-  # (1) Mean Lower Low Tide Elevation
-  # (2) Mean Low Tide Elevation
-  # (3) Mean High Tide Elevation
-  # (4) Mean Higher High Tide Elevation
-  # (5) Maximum Tidal Elevation observed
-
-# Additionally, the time and dates of each high and low tide are located, exported,
-# and used in Script 3 for groundwater hydrology metrics for respective water level recorders. 
+# Script Description: 
+# Tidal datums are calculated for a single water level recorder in a creek, 
+# ditch, or hydrologic pathway. The mean and standard error for MLLW, MLW,
+# MSL, MHW, MHHW, and maximum water elevation are calculated. MLLW and MLW are
+# the elevation of the instrument in the hydrologic pathway and should not be
+# used to report official tidal datums. Additionally, MSL is also a function of 
+# the location of the instrument elevation. Tidal datums are compiled into a
+# single table and exported. 
 
 
 #Chapter 1: Package Library ------------------------------
@@ -33,8 +28,7 @@ library(DescTools)
 library(VulnToolkit)
 
 
-
-#Chapter 2: Import hydrology time series dataset ----------------------
+#Chapter 2: Import Hydrology Dataset ----------------------
 
 #Step 1 - User input name of Site, Year, and creek logger name (column name)
 
@@ -92,7 +86,7 @@ wlr_tides_qaqc <- wlr_tides %>%
   filter(!(tide == "L" & previous_tide == "L")) %>%
   # Remove subsequent high tide from the dataset
   filter(!(tide == "H" & previous_tide == "H")) %>%
-  # Remove duplicates (not sure why this happened...)
+  # Remove potential duplicates 
   distinct(Date.Time, .keep_all = TRUE) %>%
   dplyr::select(-previous_tide)
 
@@ -105,7 +99,7 @@ write.csv(wlr_tides_qaqc,
                 collapse = ""))
 
 
-#Chapter 4: Calculate tidal datums ---------------------------------
+#Chapter 4: Tidal Datums ---------------------------------
 
 #Step 1 - Mean high water and mean low water (MHW & MLW)
 
@@ -124,7 +118,7 @@ glimpse(wlr_tides_stats)
 
 # Step 2 - Mean higher high water (MHHW)
 
-# MHHW is calculated based on the identfied HH tides from HL function
+# MHHW is calculated based on the identified HH tides from HL function
 
 wlr_tides_stats2 <- wlr_tides_qaqc %>%
   filter(tide2 == "HH") %>%
@@ -174,7 +168,7 @@ wlr_tides_max <- wlr_tides_qaqc %>%
 
 
 
-#Chapter 5: Compile tidal datums 
+#Chapter 5: Tidal Datums Table ------------------
 
 # Tidal datums are compiled into one dataset to be exported 
 # and then manually compiled into a larger table for the project 

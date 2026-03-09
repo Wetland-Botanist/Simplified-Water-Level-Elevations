@@ -1,17 +1,16 @@
-# Project: Atlantic Coast Joint Venture - Assessment of Runnel Effectiveness
-# Analysis: Groundwater Hydrology Analysis
-# Script: Water Level Recorder Processing - Visualization of Tidal and Groundwater Hydrology
+# Project: Analysis of an individual water level recorder for salt marsh monitoring
+# Script 4: Tidal and Groundwater Visualization
+# Authors: Jenny Gibson (jennifer.gibson@unhs.edu), Grant McKown (james.mckown@unh.edu)
 
-#Authors: Grant McKown (james.mckown@unh.edu)
+# Last Updated: March 9th, 2026
 
-# Script Description: Script 4 visualizes the 30-day continuous water level elevations from the 'Formatted WLR 
-# dataset' with horizontal reference lines of the marsh platform and rootzone elevation. The code
-# is highly editable by the user to format the graph to their purposes. The code for the graph was
-# designed for automation. 
 
-# Script requires two datasets:
-# 1) Formatted water level elevation dataset (created in Script 1)
-# 2) Elevation dataset (user provided)
+# Script Description: 
+# Script 5 visualizes the 30-day continuous water level elevations of the selected
+# creek and groundwater level recorders to show concurrent surface tidal hydrology
+# and groundwater dynamics. The marsh platform and root zone (~ 5 cm belowground)
+# are also shown for context. If sparrow elevations are desired, the graph has
+# built-in (yet hashed) lines to show those elevations instead. 
 
 
 #Chapter 1: Package Library ----------------------------
@@ -19,7 +18,6 @@
 #Data Organization
 library(tidyr)
 library(dplyr)
-library(pillar)
 library(lubridate)
 library(DescTools)
 
@@ -27,9 +25,9 @@ library(DescTools)
 library(ggplot2)
 library(scales)
 
-#Chapter 2: Import and Format Datasets ----------------------------------
+#Chapter 2: Import Datasets ----------------------------------
 
-#Step 1 - User input name of Site, Year, and creek logger name (column name)
+#Task 1 - User input name of Site, Year, and creek logger name (column name)
 
 # User input data allows the program to easily retrieve the hydrology time series
 # dataset from the Formatted Datasets folder without the user having to change
@@ -38,9 +36,9 @@ library(scales)
 # Logger name = water level recorder column header
 # Creek logger = creek water level recorder column header
 
-Logger_Name = "NAC" ; Creek_Logger = "Creek" ; Site = "Plum Island DPR" ; Year = "2021"
+Logger_Name = "NAC" ; Creek_Logger = "Creek" ; Site = "Kents Island" ; Year = "2025"
 
-# Step 2 - Import hydrology time series dataset
+# Task 2 - Import hydrology time series dataset
 
 wlr_format <- read.csv(paste("Formatted Datasets\\", Site, Year, "WLR Formatted Dataset.csv", 
                       collapse = "")) %>%
@@ -59,7 +57,7 @@ wlr_format <- read.csv(paste("Formatted Datasets\\", Site, Year, "WLR Formatted 
 glimpse(wlr_format)
 
 
-# Step 3 - Import the elevation dataset of marsh platform and root zone
+# Task 3 - Import the elevation dataset of marsh platform and root zone
 
 # User needs to create a csv file of the elevations of the marsh platform and root zone
 # related to the groundwater level recorders in the site. Each row will be consist
@@ -69,13 +67,15 @@ glimpse(wlr_format)
 # drainage depth
 
 
-elevs <- read.csv("Input Data\\PlumIslandDPR_MarshElevations_2024.csv") %>%
-  filter(WLR == Logger_Name)
+elevs <- read.csv("Input Data\\Kents Island WLR Elevations Example.csv") %>%
+  filter(WLR == Logger_Name) %>%
+  # Root Zone is calculated at 5 cm belowground (can be altered)
+  mutate(Rootzone_Elevation = Marsh_Elevation - 0.05)
 
 glimpse(elevs)
 
 
-#Chapter 2: Visualization Tidal and Groundwater Hydrology ----------------------------
+#Chapter 2: Hydrology Visualization ----------------------------
 
 options(scipen = 999)
 
@@ -102,9 +102,9 @@ Tidegraph <- ggplot(data = wlr_format,
                    breaks = "3 days",
                    date_labels = "%m-%d") +
   #Scale the y-axis by the minimum and maximum tidal water elevations
-  scale_y_continuous(limits = c(0.6, 2.0),
-                     breaks = seq(0.6, 2.0, 0.20), 
-                     labels = scales::label_number(accuracy = 0.10)) + 
+  scale_y_continuous(limits = c(0.4, 2.05),
+                     breaks = seq(0.4, 2.0, 0.2), 
+                     labels = scales::label_number(accuracy = 0.1)) + 
   #All the fun text resizing and coloring
   theme_bw() +
   theme(

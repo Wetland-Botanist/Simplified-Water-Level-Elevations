@@ -1,36 +1,33 @@
 # Project: Analysis of an individual water level recorder for salt marsh monitoring
-# Analysis: Groundwater Hydrology Analysis
-#Script: Water Level Recorder Processing - Flooding Metrics of Groundwater WLRs
+# Script 3: Flooding Metrics of Groundwater Wells and Pool Instruments
+# Authors: Jenny Gibson (jennifer.gibson@unhs.edu), Grant McKown (james.mckown@unh.edu)
 
-#Authors: Grant McKown (james.mckown@unh.edu)
-
-
-# In Script 3 (this code) of the 'Simplified Water Level Recorder Analysis', users provide
-# elevations of the marsh platform and root zone (5 cm below ground) in the 'Marsh and Root Zone
-# Elevations' input dataset. The code uses the Formatted Water Level Series and the Tidal Regime 
-# Water Level Series (list of low and high tides), created in Script 2, to calculate the flooding 
-# frequency and flooding duration for given marsh elevations. 
-
-# It should be noted the script has multiple data inputs including:
-# (1) Formatted continuous water level elevations series (created in Script 1),
-# (2) High and low tides list (created in Script 2),
-# (3) Marsh Platform and Root zone Elevations (user provided)
+# Last Updated: March 9th, 2026
 
 
-#Chapter 1: Package Library
+# Script Description:
+# Script 3 calculates flooding metrics for for groundwater table and/or pool
+# surface water dynamics including flooding frequency (%), flooding duration (%),
+# mean unsaturated zone depth (cm), and maximum unsaturated zone depth (cm). The
+# script outputs a single table with all flooding metrics rounded to 1 decimal place.
 
-#Data organization and 
+# Metrics are based on the marsh platform elevation representative of conditions
+# surrounding the groundwater well or pool instrument and is supplied by the user
+# in the "Marsh Platform Elevation" dataset. 
+
+#Chapter 1: Package Library -------------------
+
+#Data organization and formatting
 library(tidyr)
 library(dplyr)
 library(lubridate)
 library(DescTools)
-library(purr)
 
 #Hydrology Analysis
 library(VulnToolkit)
 
 
-#Chapter 2: Import hydrology and elevation datasets ----------------------
+#Chapter 2: Import Datasets ----------------------
 
 #Step 1 - User input name of Site, Year, and creek logger name (column name)
 
@@ -41,7 +38,7 @@ library(VulnToolkit)
 # Logger name = water level recorder column header
 # Creek logger = creek water level recorder column header
 
-Logger_Name <- "NAC" ; Creek_Logger <- "Creek" ; Site <- "Essex South" ; Year <- "2024"
+Logger_Name <- "NAC" ; Creek_Logger <- "Creek" ; Site <- "Kents Island" ; Year <- "2025"
 
 
 
@@ -56,7 +53,7 @@ wlr_format <- read.csv(paste("Formatted Datasets\\", Site, Year, "WLR Formatted 
   # Rename the groundwater hydrology water level recorder to WLR for coding purposes
   rename(WLR = Logger_Name) %>%
   # Subset the dataset to just the Date/Time and the water elevations of the water logger in question
-  select(Date.Time, WLR) %>%
+  dplyr::select(Date.Time, WLR) %>%
   # QAQC and remove any empty rows
   filter(!is.na(WLR),
          !is.na(Date.Time))
@@ -83,7 +80,7 @@ glimpse(creek_tides)
 # Elevation dataset is needed to compute flooding frequency, drainage duration, and
 # drainage depth
 
-elevs <- read.csv("Input Data\\EssexSouth_MarshElevations_2024.csv") %>%
+elevs <- read.csv("Input Data\\Kents Island WLR Elevations Example.csv") %>%
   # Reduce the elevation dataset to just the groundwater level recorder in question
   filter(WLR == Logger_Name)
 
@@ -91,7 +88,7 @@ glimpse(elevs)
 
 
 
-#Chapter 3: Calculate the Flooding Duration --------------------
+#Chapter 3: Flooding Duration (%) --------------------
 
 # Flooding duration is the amount of time the marsh platform and root zone are 
 # submerged based on the groundwater water level recorder. Flooding duration
@@ -105,29 +102,26 @@ wlr_flood <- wlr_format %>%
   # Calculate flooding duration
   summarise(marsh_flood = fld.dur(z = elevs$Marsh_Elevation,
                                   level = WLR) * 100,
-            root_flood = fld.dur(z = elevs$Rootzone_Elevation,
-                                 level = WLR) * 100,
-            # State the marsh and root zone elevations for posterity
-            marsh_elev = elevs$Marsh_Elevation,
-            
-            
-            root_elev = elevs$Rootzone_Elevation) %>%
+            # State the marsh elevation for posterity
+            marsh_elev = elevs$Marsh_Elevation) %>%
   ungroup() %>%
   # Round the flooding durations to 1 decimal place
-  mutate(across(marsh_flood:root_flood, ~round(., 1)))
+  mutate(across(marsh_flood, ~round(., 1)))
 
 glimpse(wlr_flood)
 
 # Step 2 - Reformat the flooding duration for easier use later in script
 
 wlr_flood_format <- wlr_flood %>%
-  select(-marsh_elev, -root_elev) %>%
-  gather(key = zone, value = Flood_Duration_Percent, marsh_flood, root_flood) %>%
-  mutate(zone = ifelse(zone == "marsh_flood", "Marsh Platform", "Root Zone")) %>%
+  select(-marsh_elev) %>%
+  gather(key = zone, value = Flood_Duration_Percent, marsh_flood) %>%
+  mutate(zone = ifelse(zone == "marsh_flood", "Marsh Platform")) %>%
   arrange(zone)
 
+glimpse(wlr_flood_format)
 
-# Chapter 4: High tide flooding frequency ----------------------------
+
+# Chapter 4: Flooding Frequency (%) ----------------------------
 
 # Flooding frequency is the number of times the high tide water elevation was greater 
 # than the elevation of the marsh platform and the root zone. Flooding frequency is based
@@ -145,36 +139,43 @@ wlr_freq <- creek_tides %>%
   select(-Date.Time) %>%
   # Calculate high tide flooding frequency
   summarise(marsh_freq = fld.frq(z = elevs$Marsh_Elevation, ht = level) *100,
-            
-            root_freq = fld.frq(z = elevs$Rootzone_Elevation, ht = level) * 100,
             # State the marsh and root zone elevations for posterity
-            marsh_elev = elevs$Marsh_Elevation,
-            
-            root_elev = elevs$Rootzone_Elevation) %>%
+            marsh_elev = elevs$Marsh_Elevation) %>%
   
   ungroup() %>%
 #Flooding frequency columns are in a 'list' format, reformat to double and round to 1 decimal point
-  mutate(across(c(marsh_freq, root_freq), ~as.numeric(.)),
-         across(c(marsh_freq, root_freq), ~round(., 1)))
+  mutate(marsh_freq = round(marsh_freq, 1))
 
 glimpse(wlr_freq)
 
 # Step 2 - Reformat the flooding frequency for easier use later in script
 wlr_freq_format <- wlr_freq %>%
-  select(-marsh_elev, -root_elev) %>%
-  gather(key = zone, value = HT_Frequency_Percent, marsh_freq, root_freq) %>%
-  mutate(zone = ifelse(zone == "marsh_freq", "Marsh Platform", "Root Zone")) %>%
+  select(-marsh_elev) %>%
+  gather(key = zone, 
+         value = Flood_Frequency_Percent, 
+         marsh_freq) %>%
+  mutate(zone = ifelse(zone == "marsh_freq", "Marsh Platform")) %>%
   arrange(zone)
 
 glimpse(wlr_freq_format)
 
 
-#Chapter 4: Drainage Depth ------------------------------
+#Chapter 4: Mean Unsaturated Zone Depth ------------------------------
 
-# Drainage depth is the average minimum water elevation depth between two successive
-# high tides. Drainage depth provides insight into the groundwater table elevation
-# normally affecting vegetation. Drainage depth is calculated for the marsh platform
-# and root zone (- 5 cm)
+# The unsaturated zone is the depth from the marsh platform to the groundwater table.
+# For tidal marshes, the unsaturated zone depth can be described as the lowest elevation
+# of the groundwater table between two successive high tides. Due to the nature of groundwater
+# drainage and seasonal tidal dynamics, the timing of the groundwater table reaching
+# its lowest elevation can differ between each tidal cycle. 
+
+# To calculate the unsaturated zone depth, the lowest groundwater elevation is located
+# between each successive high tide based on the timing of the "low" tides of the 
+# local creek water level recorder (e.g., low - high tide list from Script 2)
+
+# A 6.25 hour window is created on either side of each "low" tide to capture the 
+# approximate tidal window. The lowest groundwater elevation is then extracted for each
+# tidal cycle. The mean +/- standard error of the unsaturated zone depth is then
+# calculated. 
 
 #Step 1 - Locate windows between successive high tides with the low and high tide time series dataset
 
@@ -216,70 +217,47 @@ arrange(Date.Time) %>%
 
 glimpse(gw_tides_low)
 
+#Step 3: Calculate mean unsaturated zone depth (cm)
 
-#Task 3: Calculate drainage depth
+unsat_zone <- gw_tides_low %>%
+  summarise(unsat_zone_depth = elevs$Marsh_Elevation - mean(tide_elev)) %>%
+  mutate(
+    unsat_zone_depth = round(unsat_zone_depth * 100, 1))
 
-# Task 2 calculated the groundwater table elevation, yet drainage depth is relative
-# to the elevation of the marsh platform and root zone. Therefore groundwater table 
-# calculated in Step 2 is substrated from the marsh platform and root zone elevations.
+glimpse(unsat_zone)
 
-# Positive drainage depth = groundwater depths BELOW marsh platform or root zone
-# Negative drainage depth = Marsh platform or root zone are normally SUBMERGED
+# Chapter 5: Maximum Unsaturated Zone Depth (cm) ------------------------
 
-drainage_depth <- gw_tides_low %>%
-  summarise(Marsh_Drainage = elevs$Marsh_Elevation - mean(tide_elev),
-            RootZone_Drainage = elevs$Rootzone_Elevation - mean(tide_elev)) %>%
-  mutate(across(Marsh_Drainage:RootZone_Drainage,
-                ~round(., 3)))
+# The maximum unsaturated zone depth illustrates the greatest groundwater drainage
+# the salt marsh experiences during the neap tides. It is calculated as the 
+# difference between the marsh platform elevation and the minimum groundwater depth
 
-glimpse(drainage_depth)
+# Step 1: Calculate maximum unsaturated zone depth (cm)
 
+max_unsat_zone_depth <- 
+  round((elevs$Marsh_Elevation[1] - min(wlr_format$WLR)) * 100, 1)
 
+glimpse(max_unsat_zone_depth)
 
-# Chapter 6: Drainage Amplitude ----------------------------
-
-# Drainage amplitude calculates the additional drainage seen during neap tide
-# cycles and provides insight into the level of drainage during the 1 - 2 weeks
-# the marsh platform is not submerged from tidal flooding. You can consider it
-# as the extra drainage the marsh receives ON TOP of the normal drainage from
-# between average high tides. 
-
-# Drainage amplitude is calculated as the difference between the mean
-# groundwater table elevation and the minimum groundwater elevation of the dataset
-
-
-# Step 1 - Calculate the mean groundwater elevation
-
-gw_mean_elev <- gw_tides_low %>%
-  summarise(llt = mean(tide_elev, na.rm = TRUE))
-  
-gw_mean_elev
-  
-#Step 2 - Calculate drainage amplitude
-
-drainage_amplitude <- round(
-  gw_mean_elev[1,1] - min(wlr_format$WLR), 3)
-
-glimpse(drainage_amplitude)
-
-#Chapter 7: Flooding Metrics Statistics Table --------------
+#Chapter 7: Compiled Metrics Table --------------
 
 # All of the groundwater hydrology metrics are compiled into one nice and neat
 # table to be exported for the single groundwater instrument
 
-gw_stats <- data.frame(matrix(nrow = 2,
+gw_stats <- data.frame(matrix(nrow = 1,
                                ncol = 8)) %>%
   SetNames(c("WLR", "Season", "Zone", "Elevation", "Flood_Duration_percent",
-             "HT_Frequency", "Drainage_Depth_m", "Drainage_Amplitude_m")) %>%
+             "Flood_Frequency_percent", "Mean_Unsaturated_Zone_cm",
+             "Max_Unsaturated_Zone_cm")) %>%
   mutate(
     WLR = Logger_Name,
     Season = Year,
-    Zone = c("Marsh Platform", "Root Zone"),
-    Elevation = ifelse(Zone == "Marsh Platform", elevs$Marsh_Elevation, elevs$Rootzone_Elevation),
+    Zone = c("Marsh Platform"),
+    Elevation = elevs$Marsh_Elevation[1],
     Flood_Duration_percent = wlr_flood_format$Flood_Duration_Percent,
-    HT_Frequency = wlr_freq_format$HT_Frequency_Percent,
-    Drainage_Depth_m = ifelse(Zone == "Marsh Platform", drainage_depth$Marsh_Drainage, drainage_depth$RootZone_Drainage),
-    Drainage_Amplitude_m = drainage_amplitude[1,1])
+    Flood_Frequency_percent = wlr_freq_format$Flood_Frequency_Percent,
+    Mean_Unsaturated_Zone_cm = unsat_zone$unsat_zone_depth,
+    Max_Unsaturated_Zone_cm = max_unsat_zone_depth)
 
 glimpse(gw_stats)
 
@@ -289,13 +267,13 @@ write.csv(gw_stats,
                 collapse = ""))
 
 
+# Proceed to Script 6 to analyze flooding occurrence and frequency for sparrow
+# islands on the marsh platform
 
-# Proceed to Script 4 for visualizing the creek and groundwater hydrology time series
+# Proceed to Script 5 for visualizing the creek and groundwater hydrology time series
 # data. 
 
-# Proceed to Script 5 after all of the groundwater level recorders are processed and flooding metrics
+# Proceed to Script 6 after all of the groundwater level recorders are processed and flooding metrics
 # are compiled into one table for a given site for data visualizations.   
 
-# Proceed to Script 6 after all of the groundwater level recorders are processed and flooding metrics
-# are compiled into one project-wide table for analysis at the project scale.  
 

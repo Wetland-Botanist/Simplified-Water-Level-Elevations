@@ -1,11 +1,22 @@
-# Project: Atlantic Coast Joint Venture - Assessment of Runnel Effectiveness
-# Analysis: Groundwater Hydrology Analysis
-#Script: Water Level Recorder Processing - Data Formatting
+# Project: Analysis of an individual water level recorder for salt marsh monitoring
+# Script 1: Formatting and Organization of Water Level Elevation Dataset
+# Authors: Jenny Gibson (jennifer.gibson@unhs.edu), Grant McKown (james.mckown@unh.edu)
 
-#Authors: Grant McKown (james.mckown@unh.edu)
+# Last Updated: March 9th, 2026
+
+#Project Description:
+# The code is largely a product of the VulnToolkit package created by Troy Hill 
+# at the EPA. He devised a fantastic method to analyze the duration of 
+# inundation and frequency of inundation for a given elevation. Additionally,
+# the VulnToolkit calculates the elevation of the average and maximum high and low tides. 
+
+# The overall purpose of the code is to analyze water level elevation data to 
+# accurately describe and summarise the tidal hydrology regime for salt marsh 
+# systems and groundwater regimes at individual water level recorders
 
 
-# Script Description: Script imports time series groundwater hydrology data of a 
+# Script Description: 
+# Script imports time series groundwater hydrology data of a 
 # series of groundwater water level recorders and a single creek water level recorder
 # at one of the sites in the project. Script formats the dataset, subsets the dataset
 # to a 30 day lunar cycle based on the median date in the  dataset. Descriptions
@@ -22,7 +33,7 @@ library(lubridate)
 library(DescTools)
 
 
-#Chapter 2: Import the water level elevation time series dataset -----------------
+#Chapter 2: Import Water Elevations Dataset -----------------
 
 # Step 1: User input Site Name
 # The site name is recorded in the CSV and Image exports for all formatted datasets, 
