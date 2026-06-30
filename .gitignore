@@ -47,3 +47,12 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Do not upload Figures
+*.jpg
+
+# Do not upload Formatted Datasets
+Formatted Datasets/*.csv
+
+# Do not upload statistics
+Output Stats/*.csv
