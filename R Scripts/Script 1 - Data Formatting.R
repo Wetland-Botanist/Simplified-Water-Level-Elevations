@@ -1,125 +1,224 @@
-# Project: Analysis of an individual water level recorder for salt marsh monitoring
-# Script 1: Formatting and Organization of Water Level Elevation Dataset
-# Authors: Jenny Gibson (jennifer.gibson@unhs.edu), Grant McKown (james.mckown@unh.edu)
+# Project: Analysis of an individual conductivity meter 
+# Script 1: Formatting and Organization of Salinity and Conductivity Datasets
+# Authors: Grant McKown (james.mckown@unh.edu)
 
-# Last Updated: March 9th, 2026
+# Last Updated: June 2026
 
 #Project Description:
-# The code is largely a product of the VulnToolkit package created by Troy Hill 
-# at the EPA. He devised a fantastic method to analyze the duration of 
-# inundation and frequency of inundation for a given elevation. Additionally,
-# the VulnToolkit calculates the elevation of the average and maximum high and low tides. 
-
-# The overall purpose of the code is to analyze water level elevation data to 
-# accurately describe and summarise the tidal hydrology regime for salt marsh 
-# systems and groundwater regimes at individual water level recorders
 
 
 # Script Description: 
-# Script imports time series groundwater hydrology data of a 
-# series of groundwater water level recorders and a single creek water level recorder
-# at one of the sites in the project. Script formats the dataset, subsets the dataset
-# to a 30 day lunar cycle based on the median date in the  dataset. Descriptions
-# of deployment and collection times, monitoring duration, and other site metadata
-# for the probes are detailed and exported. 
+
 
 
 #Chapter 1: Package Library ------------------------------------
 
 # Data Organization and Formatting
-library(tidyr)
-library(dplyr)
-library(lubridate)
+library(tidyverse)
 library(DescTools)
 
 
-#Chapter 2: Import Water Elevations Dataset -----------------
+#Chapter 2: Import Salinity and Conductivity Datasets -----------------
 
-# Step 1: User input Site Name
-# The site name is recorded in the CSV and Image exports for all formatted datasets, 
-# tidal regime statistics, flooding statistics, and water level elevation graphs in
-# the whole R project. Strictly for naming and file export and reading purposes.
+# Step 1: User input site Name
 
-Site <- "Kents Island"
+# Year is used for file name conventions, export, and import throughout the
+# R project
 
+Site <- "Philbrook Pond"
 
-wlr <- read.csv("Input Data\\Kents Island 2025 Compiled WLRs R.csv") %>%
+Creek_Name <- "Garland_Brook"
+
+# Step 2: Import and format salinity and conductivity datasets
+
+salinity <- read.csv("Input Data\\Philbrook Pond - Salinity psu - First Deployment - 2026.csv") %>%
+  # Remove miscellaneous rows that does not have a proper date
   filter(!is.na(Date.Time),
-         Date.Time != "")
-
-glimpse(wlr)
-
-
-
-
-
-#Chapter 3: Format hydrology dataset -------------------
-
-# Convert the 'Date.Time' column to a POSIT data type to make data calculations in 'lubridate' 
-# package easier to reduce the entire dataset to 30-day lunar tidal cycle
-
-#Step 1 - Conversion of Date.Time
-
-wlr_format <- wlr %>%
+         Date.Time != "") %>%
+  # Format the Date.Time column
   mutate(Date.Time = as.POSIXct(Date.Time, format = '%m/%d/%Y %H:%M'))
 
-glimpse(wlr_format)
+glimpse(salinity)
 
-Year <- min(unique(year(wlr_format$Date.Time)))
-  
-#Step 2 - Reduce the dataset to the 30 day lunar tidal cycle
+conductivity <- read.csv("Input Data\\Philbrook Pond - Cond mS - First Deployment - 2026.csv") %>%
+  filter(!is.na(Date.Time),
+         Date.Time != "") %>%
+  mutate(Date.Time = as.POSIXct(Date.Time, format = '%m/%d/%Y %H:%M'))
 
-#For research methods for the lab at University of New Hampshire, we normally deploy the WLRs for 
-# roughly 30 - 40 days. We usually are not able to collect the WLRs perfectly at the end of the 
-# lunar tidal cycle. We decided to subset the WLR data set to roughly a spring tidal cycle (~30 days). 
-# We calculate the exact center date in the monitoring period and +/- 15 days. 
+glimpse(conductivity)
 
-lunar_cycle <- data.frame(matrix(nrow = 1, ncol = 8)) %>%
-  setNames(c("Site_Name", 'Year', 'Deployment_Duration', 'Deployment_Days', 'Analysis_Duration', 'Analysis_Days',
-             'Start_Date', 'End_Date')) %>%
-  mutate( Site_Name = Site,
-          WLR = colnames(wlr_format)[2],
-          Year = year(wlr_format$Date.Time[1]),
-    
-    #Deployment time is calculated as the total duration of the water level elevation dataset
-    #Deployment time is calculated with the as.duration() function that converts the entire dataset to the number of seconds
-    #Deployment time is then divided by the number of days to calculate the deployment time in days
-        
-          Deployment_Days = as.duration(min(wlr_format$Date.Time) %--% max(wlr_format$Date.Time))/ddays(1),
-          Deployment_Duration = paste(min(wlr_format$Date.Time), max(wlr_format$Date.Time), sep = " - "),
-    
-    #Middle, Start, and End dates are calculated with the lubridate() package with quick mathematics of dates
-    #Currently, start and end dates are calculated as +/- 15 days from the middle date
-         Middle_Date = days(round(Deployment_Days/ 2, 0)) + wlr_format$Date.Time[1],
-         
-         Start_Date = Middle_Date - days(15),
-         End_Date = Middle_Date + days(15),
-    
-          Analysis_Days = as.duration(Start_Date %--% End_Date) / ddays(1),
-          Analysis_Duration = paste(Start_Date, End_Date, sep = " - "))
+# Step 3: Extract Year from salinity dataset
 
-glimpse(lunar_cycle)
+# Year is used for file name conventions, export, and imporpt throughout the
+# R project
+
+Year <- max(Year(salinity$Date.Time))
+
+Year
+
+#Chapter 3: Remove "out of water" times from datasets -------------------
+
+# If the creek water level recorder was out of water, the salinity and conductivity
+# measurements would not be appropriate to include in the analysis
+
+# Step 1: Import the Creek Water Elevation Dataset
+creek_wlr <- read.csv("Input Data\\Philbrook Pond - First Deployment 2026 - June 2026.csv") %>%
+  select(Date.Time, Creek_Name) %>%
+  mutate(Date.Time = as.POSIXct(Date.Time, format = '%m/%d/%Y %H:%M')) %>%
+  rename(Creek = Creek_Name)
+
+# Step 2: Reduce the water elevation dataset to times out of the water
+
+# The calculation is made that anytime the water level elevation is roughly 1 cm
+# of the minimum recorded water elevation, it is most likely the sensor was out 
+# of the water. 
+
+# Step 1: Remove "out of water" readings from creek water elevation dataset
+# "Out of water" readings were justified as within 12.5 cm of the minimum water elevation
+# to be on the conservative side, so 2/3 of the PVC casing is underwater
+
+creek_water <- creek_wlr %>%
+  filter(Date.Time %in% salinity$Date.Time) %>%
+  filter(Creek >= min(Creek) + 0.05) %>%
+  rename(Creek_WLR = Creek)
+
+# Step 2: Remove "out of water" readings from the salinity and conductivity datasets
+
+# The "out of water" water elevation dataset is merged for QAQC review
+
+creek_salinity_water <- salinity %>%
+  select(Date.Time, Creek_Name) %>%
+  rename(Creek_Salinity = Creek_Name) %>%
+  filter(Date.Time %in% creek_water$Date.Time) %>%
+  full_join(creek_water, by = "Date.Time")
+
+glimpse(creek_salinity_water)
+
+creek_conductivity_water <- conductivity %>%
+  select(Date.Time, Creek_Name) %>%
+  rename(Creek_Cond = Creek_Name) %>%
+  filter(Date.Time %in% creek_water$Date.Time) %>%
+  full_join(creek_water, by = "Date.Time")
+
+glimpse(creek_conductivity_water)
+
+# Step 3: Merge the out of water datasets back with the original datasets
+
+salinity_creek <- salinity %>%
+  select(-Creek_Name) %>%
+  full_join(creek_salinity_water, by = "Date.Time") %>%
+  rename(!!Creek_Name := Creek_Salinity) %>%
+  select(-Creek_WLR)
+
+glimpse(salinity_creek)
+
+conductivity_creek <- conductivity %>%
+  select(-Creek_Name) %>%
+  full_join(creek_conductivity_water, by = "Date.Time") %>%
+  rename(!!Creek_Name := Creek_Cond) %>%
+  select(-Creek_WLR)
+
+glimpse(conductivity_creek)
+
+rm(creek_salinity_water, creek_conductivity_water, creek_water, creek_wlr)
 
 
-# Export the metadata of the deployment of the water level recorders
-write.csv(lunar_cycle,
-          paste("Output Stats\\", Site, Year, "WLR Metadata.csv", 
-                collapse = ""))
+
+# Chapter 4: Temperature QAQC -----------------------------
+
+#One major QAQC check is to determine if something went haywire with the probe, which
+# can easily be seen if the temperature readings went sideways. If so, the probe may 
+# have been impacted, malfunctioned out of water, or other issues. 
+
+# Step 1: Import the Temperature Dataset
+
+temp <- read.csv("Input Data\\Philbrook Pond - Temp F - First Deployment - 2026.csv") %>%
+  mutate(Date.Time = as.POSIXct(Date.Time, format = '%m/%d/%Y %H:%M'))
+
+glimpse(temp)
+
+# Step 2: Identify all of the time readings for each probe that seem haywire
+  # For now, haywire refers to temperatures being negative as probes are only deployed
+  # outside of the winter
+temp <- temp %>%
+  # Gather all of the columns except for Date.Time
+  gather(2:ncol(.),
+         key = Logger,
+         value = Temperature_F) %>%
+  mutate(
+    Data_Check = ifelse(Temperature_F <= 0, "Flag", "Good"))
+
+# Step 3: Remove erroneous salinity measurements
+
+salinity_qaqc <- salinity_creek %>%
+  pivot_longer(2:ncol(.),
+         names_to = "Logger",
+         values_to = "Salinity") %>%
+  full_join(temp,
+            by = c("Logger", "Date.Time")) %>%
+  mutate(
+    Salinity = ifelse(Data_Check == "Flag",
+                      NA, Salinity)) %>%
+  select(-Temperature_F, -Data_Check) %>%
+  pivot_wider(
+         names_from = "Logger",
+         values_from = "Salinity")
+
+glimpse(salinity_qaqc)
 
 
-# Step 3 - Next filter the hydrology dataset based on the start and end dates
+# Step 4: Remove erroneous conductivity measurements
 
-wlr_subset <- wlr_format %>%
-  filter(Date.Time > lunar_cycle$Start_Date,
-         Date.Time < lunar_cycle$End_Date)
+conductivity_qaqc <- conductivity_creek %>%
+  pivot_longer(2:ncol(.),
+               names_to = "Logger",
+               values_to = "Salinity") %>%
+  full_join(temp,
+            by = c("Logger", "Date.Time")) %>%
+  mutate(
+    Salinity = ifelse(Data_Check == "Flag",
+                      NA, Salinity)) %>%
+  select(-Temperature_F, -Data_Check) %>%
+  pivot_wider(
+    names_from = "Logger",
+    values_from = "Salinity")
 
-# Step 4 - Export the formatted continuous water level recorder dataset 
+glimpse(conductivity_qaqc)
 
-write.csv(wlr_subset,
-          paste("Formatted Datasets\\", Site, Year, "WLR Formatted Dataset.csv", 
-                collapse = ""))
+rm(temp, salinity_creek, conductivity_creek)
+
+# Chapter 5: Lunar Tidal Cycles --------------------------
+
+# Lunar cycles are based on a 29.5 day (708 hours). The start of the lunar cycle
+# in the dataset is at the first measurement. 
+
+# Step 1: Identify the date and time every 29.5 days (breaks for each lunar tidal cycle)
+cycle_breaks <- seq(from = min(salinity_qaqc$Date.Time), 
+                         to = max(salinity_qaqc$Date.Time),
+                         by = "708 hour")
 
 
+# Step 2: Assign a grouping variable for each lunar tidal cycle
 
-# Tidal datums are calculated in Script 2 based on the creek water level recorder
+# The findInterval function does exactly that!
+salinity_final <- salinity_qaqc %>%
+  mutate(Tidal_Cycle = findInterval(Date.Time, cycle_breaks))
 
+glimpse(salinity_final)
+
+# The findInterval function does exactly that!
+conductivity_final <- conductivity_qaqc %>%
+  mutate(Tidal_Cycle = findInterval(Date.Time, cycle_breaks))
+
+glimpse(conductivity_final)
+
+
+# Chapter 5: Export formatted Salinity and Conductivity Datasets
+
+write.csv(salinity_final,
+          paste("Formatted Datasets\\ ", Site, " - ", Year, " - Salinty psu Formatted.csv"))
+
+write.csv(conductivity_final,
+          paste("Formatted Datasets\\ ", Site, " - ", Year, " - Conductivity mS-cm Formatted.csv"))
+
+          
